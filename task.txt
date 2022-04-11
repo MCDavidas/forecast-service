@@ -1,0 +1,37 @@
+Develop REST weather forecast web-service.
+
+Framework for that project: Flask, FastAPI, Django (choose 1) 
+ORM: SQLAlchemy, SQLModel, Tortoise, Django ORM( choose 1). 
+
+Your service should gather weather forecasts from an API (you can choose provider yourself). 
+Functionality: 
+1. Show the weather forecast for the selected period (in the future) and the region (selected by user). 
+Format:
+{
+ “region”: string,
+ “start_date”: date,
+ “end_date”: date,
+ “average_daytime_temperature”: decimal,
+ “average_nighttime_temperature”: decimal,
+ “average_humidity”: integer
+}
+
+2. Generate statistics for the month /year/week (in the past) for the selected region. The data must be stored in a database (PostgreSQL).
+Format:
+{
+ “region”: string,
+ “start_date”: date,
+ “end_date”: date,
+ “average_daytime_temperature”: decimal,
+ “average_nighttime_temperature”: decimal,
+ “average_humidity”: integer
+}
+
+You can make frontend for that task, but it’s not necessary (will be an advantage). 
+You should test your code using pytest.
+
+1. Create a public repository for your code
+2. Create a basic README for your code. In the readme remember to add instructions how to start and test your code and write how long it took to create it
+
+If some information about the task is not clear or is not provided, do it at your discretion.
+We will assess your code performance, readability, reusability and resilience to errors.
