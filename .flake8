@@ -1,0 +1,12 @@
+[flake8]
+# ANN101 - type annotation for self
+# ANN102 - type annotation for cls in class methods
+extend-ignore = ANN101,ANN102
+count = True
+max_line_length = 120
+max_complexity = 20
+extend-exclude =
+    .git,
+    __pycache__,
+    venv,
+    migrations
