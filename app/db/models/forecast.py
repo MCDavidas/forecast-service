@@ -13,8 +13,7 @@ class Forecast(Base):
 
     id = Column(Integer, primary_key=True)
     region = Column(String, nullable=False)
-    start_date = Column(Date)
-    end_date = Column(Date)
-    average_daytime_temperature = Column(Numeric)
-    average_nighttime_temperature = Column(Numeric)
-    average_humidity = Column(Integer)
+    date = Column(Date)
+    daytime_temperature = Column(Numeric)
+    nighttime_temperature = Column(Numeric)
+    humidity = Column(Integer)

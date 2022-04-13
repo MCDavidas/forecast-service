@@ -1,15 +1,20 @@
+import asyncio
+import typing as tp
 import aiohttp
-from datetime import date, datetime
+import time
+from datetime import date, datetime, timedelta
+from decimal import Decimal
 from statistics import mean
 from geopy.geocoders import Nominatim
 
 from settings import API_KEY
+from db.dals.forecast_dal import ForecastDAL
 
 
 LOCATOR = Nominatim(user_agent="weather-forecast-application")
 
 
-async def get_weather(region: str, start_date: date, end_date: date):
+async def get_weather_future(region: str, start_date: date, end_date: date):
     location = LOCATOR.geocode(region)
     complete_url = (
         f'https://api.openweathermap.org/data/2.5/onecall?lat={location.latitude}&lon={location.longitude}'
@@ -30,3 +35,61 @@ async def get_weather(region: str, start_date: date, end_date: date):
         return average_daytime_temperature, average_nighttime_temperature, average_humidity
     else:
         return None, None, None
+
+
+async def request_history(la: float, lo: float, stamp: int):
+    complete_url = (
+        f'https://api.openweathermap.org/data/2.5/onecall/timemachine?lat={la}&lon={lo}'
+        f'&dt={stamp}&units=metric&appid={API_KEY}'
+    )
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(complete_url) as resp:
+            history = await resp.json()
+
+    day = history['hourly']
+
+    daytime_temperature = mean([Decimal(hour['temp']) for hour in day[5:-1]])
+    nighttime_temperature = mean([Decimal(hour['temp']) for hour in day[:5] + day[-1:]])
+    humidity = sum([hour['humidity'] for hour in day]) // 24
+
+    return daytime_temperature, nighttime_temperature, humidity
+
+
+async def get_weather_history(forecast_dal: ForecastDAL, region: str, days_count: int):
+    average_daytime_temperature: Decimal = Decimal(0)
+    average_nighttime_temperature: Decimal = Decimal(0)
+    average_humidity: Decimal = Decimal(0)
+    five_day_forecast: tp.List[tp.List[tp.Any]] = []
+
+    base = date.today()
+    for x in range(days_count):
+        day = base - timedelta(days=x)
+        forecast = await forecast_dal.get_forecast_by_date(day)
+        if forecast:
+            average_daytime_temperature += forecast.daytime_temperature
+            average_nighttime_temperature += forecast.nighttime_temperature
+            average_humidity += forecast.humidity
+        else:
+            if not five_day_forecast:
+                location = LOCATOR.geocode(region)
+                timestamps = [time.mktime(x.timetuple()) for x in [base - timedelta(days=x) for x in range(5)]]
+                five_day_forecast = await asyncio.gather(
+                    *[request_history(location.latitude, location.longitude, int(stamp)) for stamp in timestamps]
+                    )
+
+            forecast = five_day_forecast[x % 5]
+            await forecast_dal.create_forecast(region=region,
+                                               date=day,
+                                               daytime_temperature=forecast[0],
+                                               nighttime_temperature=forecast[1],
+                                               humidity=forecast[2])
+            average_daytime_temperature += forecast[0]
+            average_nighttime_temperature += forecast[1]
+            average_humidity += forecast[2]
+
+    average_daytime_temperature /= days_count
+    average_nighttime_temperature /= days_count
+    average_humidity //= days_count
+
+    return average_daytime_temperature, average_nighttime_temperature, average_humidity
