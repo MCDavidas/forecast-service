@@ -4,3 +4,5 @@ sqlalchemy
 aiosqlite
 aiohttp
 geopy
+pytest
+requests
