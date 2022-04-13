@@ -4,10 +4,10 @@ from enum import Enum
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+from starlette.responses import JSONResponse
 
-from db.models.forecast import Forecast
 from db.dals.forecast_dal import ForecastDAL
-from utils.weather_api import get_weather_future, get_weather_history
+from utils.weather_api import get_weather_future, get_weather_history, get_location
 from dependencies import get_forecast_dal
 
 
@@ -37,8 +37,27 @@ router = APIRouter()
 
 
 @router.get("/forecast", response_model=ForecastResponse)
-async def get_forecast(forecast_query: ForecastQuery) -> Forecast:
-    stats = await get_weather_future(forecast_query.region, forecast_query.start_date, forecast_query.end_date)
+async def get_forecast(forecast_query: ForecastQuery):
+    if not date.today() <= forecast_query.start_date <= forecast_query.end_date:
+        return JSONResponse(
+            status_code=422,
+            content={'detail': [{'loc': ['body'], "msg": "incorrect period"}]},
+        )
+
+    la, lo = get_location(forecast_query.region)
+    if not la or not lo:
+        return JSONResponse(
+            status_code=422,
+            content={'detail': [{'loc': ['body', 'region'], "msg": "incorrect region"}]},
+        )
+
+    stats = await get_weather_future(la, lo, forecast_query.start_date, forecast_query.end_date)
+    if not stats:
+        return JSONResponse(
+            status_code=204,
+            content={'detail': [{'loc': ['body'], "msg": "no forecast for specified period"}]},
+        )
+
     item = {
         'region': forecast_query.region,
         'start_date': forecast_query.start_date,
@@ -53,7 +72,7 @@ async def get_forecast(forecast_query: ForecastQuery) -> Forecast:
 @router.get("/statisctics/{period}", response_model=ForecastResponse)
 async def generate_statisctics(period: Period,
                                forecast_query: ForecastHistory,
-                               forecast_dal: ForecastDAL = Depends(get_forecast_dal)) -> Forecast:
+                               forecast_dal: ForecastDAL = Depends(get_forecast_dal)):
     if period == Period.week:
         days_count = 7
     if period == Period.month:

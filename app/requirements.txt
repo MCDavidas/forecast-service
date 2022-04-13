@@ -6,3 +6,5 @@ aiohttp
 geopy
 pytest
 requests
+starlette
+types-requests

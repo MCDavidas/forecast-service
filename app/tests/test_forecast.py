@@ -1,5 +1,7 @@
 from datetime import date, timedelta
 
+from requests import Response
+
 from app import app
 from fastapi.testclient import TestClient
 
@@ -75,7 +77,7 @@ def test_get_forecast_no_region():
 def test_get_forecast_region_int():
     base = date.today()
     body = {
-        'region': 23,
+        'region': 'S2kjSK&%%@@',
         'start_date': base.strftime('%Y-%m-%d'),
         'end_date': (base + timedelta(days=3)).strftime('%Y-%m-%d'),
         }
@@ -84,7 +86,7 @@ def test_get_forecast_region_int():
     assert response.status_code == 422
     for message in response.json()['detail']:
         assert message['loc'] == ['body', 'region']
-        assert message['msg'] == 'field required'
+        assert message['msg'] == 'incorrect region'
 
 
 def test_get_forecast_no_start_date():
@@ -101,6 +103,13 @@ def test_get_forecast_no_start_date():
         assert message['msg'] == 'field required'
 
 
+def assert_incorrect_period(response: Response):
+    assert response.status_code == 422
+    for message in response.json()['detail']:
+        assert message['loc'] == ['body']
+        assert message['msg'] == 'incorrect period'
+
+
 def test_get_forecast_start_date_int():
     base = date.today()
     body = {
@@ -110,10 +119,7 @@ def test_get_forecast_start_date_int():
         }
 
     response = client.get("/forecast", json=body)
-    assert response.status_code == 422
-    for message in response.json()['detail']:
-        assert message['loc'] == ['body', 'start_date']
-        assert message['msg'] == 'field required'
+    assert_incorrect_period(response)
 
 
 def test_get_forecast_past_date():
@@ -125,7 +131,7 @@ def test_get_forecast_past_date():
         }
 
     response = client.get("/forecast", json=body)
-    assert response.status_code == 400
+    assert_incorrect_period(response)
 
 
 def test_get_forecast_incorrect_period():
@@ -137,4 +143,19 @@ def test_get_forecast_incorrect_period():
         }
 
     response = client.get("/forecast", json=body)
-    assert response.status_code == 400
+    assert_incorrect_period(response)
+
+
+def test_get_forecast_future_period():
+    base = date.today()
+    body = {
+        'region': 'Moscow',
+        'start_date': (base + timedelta(days=15)).strftime('%Y-%m-%d'),
+        'end_date': (base + timedelta(days=18)).strftime('%Y-%m-%d'),
+        }
+
+    response = client.get("/forecast", json=body)
+    assert response.status_code == 204
+    for message in response.json()['detail']:
+        assert message['loc'] == ['body']
+        assert message['msg'] == 'no forecast for specified period'

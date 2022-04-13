@@ -14,10 +14,17 @@ from db.dals.forecast_dal import ForecastDAL
 LOCATOR = Nominatim(user_agent="weather-forecast-application")
 
 
-async def get_weather_future(region: str, start_date: date, end_date: date):
+def get_location(region: str):
     location = LOCATOR.geocode(region)
+    if location:
+        return location.latitude, location.longitude
+    else:
+        return None, None
+
+
+async def get_weather_future(la: float, lo: float, start_date: date, end_date: date):
     complete_url = (
-        f'https://api.openweathermap.org/data/2.5/onecall?lat={location.latitude}&lon={location.longitude}'
+        f'https://api.openweathermap.org/data/2.5/onecall?lat={la}&lon={lo}'
         f'&exclude=current,minutely,hourly,alerts&units=metric&appid={API_KEY}'
     )
 
@@ -34,7 +41,7 @@ async def get_weather_future(region: str, start_date: date, end_date: date):
         average_humidity = sum([day['humidity'] for day in days]) // len(days)
         return average_daytime_temperature, average_nighttime_temperature, average_humidity
     else:
-        return None, None, None
+        return None
 
 
 async def request_history(la: float, lo: float, stamp: int):
