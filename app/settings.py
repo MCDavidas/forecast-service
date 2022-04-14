@@ -21,7 +21,7 @@ def parse_env_variable(var_name, as_int=False, as_bool=False, default=None):
     return var
 
 
-IP_ADDRESS = parse_env_variable('IP_ADDRESS')
-PORT = parse_env_variable('PORT', as_int=True)
-DATABASE_URL = parse_env_variable('DATABASE_URL')
+IP_ADDRESS = parse_env_variable('IP_ADDRESS', default='127.0.0.1')
+PORT = parse_env_variable('PORT', as_int=True, default=8000)
+DATABASE_URL = parse_env_variable('DATABASE_URL', default="sqlite+aiosqlite:///./test.db")
 API_KEY = parse_env_variable('API_KEY')
