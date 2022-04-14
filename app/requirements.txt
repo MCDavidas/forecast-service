@@ -8,3 +8,5 @@ pytest
 requests
 starlette
 types-requests
+pytest-asyncio
+pytest-async-sqlalchemy

@@ -74,7 +74,7 @@ def test_get_forecast_no_region():
         assert message['msg'] == 'field required'
 
 
-def test_get_forecast_region_int():
+def test_get_forecast_incorrect_region():
     base = date.today()
     body = {
         'region': 'S2kjSK&%%@@',

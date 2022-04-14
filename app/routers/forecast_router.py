@@ -80,7 +80,14 @@ async def generate_statisctics(period: Period,
     if period == Period.year:
         days_count = 365
 
-    stats = await get_weather_history(forecast_dal, forecast_query.region, days_count)
+    la, lo = get_location(forecast_query.region)
+    if not la or not lo:
+        return JSONResponse(
+            status_code=422,
+            content={'detail': [{'loc': ['body', 'region'], "msg": "incorrect region"}]},
+        )
+
+    stats = await get_weather_history(forecast_dal, forecast_query.region, la, lo, days_count)
     item = {
         'region': forecast_query.region,
         'start_date': date.today() - timedelta(days=days_count),

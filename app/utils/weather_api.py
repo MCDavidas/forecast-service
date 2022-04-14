@@ -63,7 +63,11 @@ async def request_history(la: float, lo: float, stamp: int):
     return daytime_temperature, nighttime_temperature, humidity
 
 
-async def get_weather_history(forecast_dal: ForecastDAL, region: str, days_count: int):
+async def get_weather_history(forecast_dal: ForecastDAL,
+                              region: str,
+                              la: float,
+                              lo: float,
+                              days_count: int):
     average_daytime_temperature: Decimal = Decimal(0)
     average_nighttime_temperature: Decimal = Decimal(0)
     average_humidity: Decimal = Decimal(0)
@@ -79,10 +83,9 @@ async def get_weather_history(forecast_dal: ForecastDAL, region: str, days_count
             average_humidity += forecast.humidity
         else:
             if not five_day_forecast:
-                location = LOCATOR.geocode(region)
                 timestamps = [time.mktime(x.timetuple()) for x in [base - timedelta(days=x) for x in range(5)]]
                 five_day_forecast = await asyncio.gather(
-                    *[request_history(location.latitude, location.longitude, int(stamp)) for stamp in timestamps]
+                    *[request_history(la, lo, int(stamp)) for stamp in timestamps]
                     )
 
             forecast = five_day_forecast[x % 5]
