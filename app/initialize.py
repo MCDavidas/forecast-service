@@ -11,5 +11,6 @@ async def init_db(engine, base):
 if __name__ == '__main__':
     from db.config import engine
     from db.declaration import Base
+    from db.models.forecast import Forecast
 
     asyncio.run(init_db(engine, Base))

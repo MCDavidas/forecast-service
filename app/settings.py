@@ -21,5 +21,7 @@ def parse_env_variable(var_name, as_int=False, as_bool=False, default=None):
     return var
 
 
+IP_ADDRESS = parse_env_variable('IP_ADDRESS')
+PORT = parse_env_variable('PORT', as_int=True)
 DATABASE_URL = parse_env_variable('DATABASE_URL')
 API_KEY = parse_env_variable('API_KEY')

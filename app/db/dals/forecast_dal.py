@@ -33,8 +33,8 @@ class ForecastDAL():
         forecasts = q.scalars().all()
         return forecasts
 
-    async def get_forecast_by_date(self, date: date) -> Forecast:
-        query = select(Forecast).where(Forecast.date == date)
+    async def get_forecast(self, region: str, date: date) -> Forecast:
+        query = select(Forecast).where(Forecast.date == date).where(Forecast.region == region)
         results = await self.db_session.execute(query)
         try:
             (result,) = results.one()

@@ -76,7 +76,7 @@ async def get_weather_history(forecast_dal: ForecastDAL,
     base = date.today()
     for x in range(days_count):
         day = base - timedelta(days=x)
-        forecast = await forecast_dal.get_forecast_by_date(day)
+        forecast = await forecast_dal.get_forecast(region, day)
         if forecast:
             average_daytime_temperature += forecast.daytime_temperature
             average_nighttime_temperature += forecast.nighttime_temperature
