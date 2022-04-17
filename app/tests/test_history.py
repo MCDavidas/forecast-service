@@ -16,8 +16,6 @@ from db.dals.forecast_dal import ForecastDAL
 engine = create_async_engine("sqlite+aiosqlite:///./test.db", future=True, echo=True)
 async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
-client = TestClient(app)
-
 
 async def override_get_forecast_dal():
     async with async_session() as session:
@@ -39,6 +37,12 @@ def event_loop():
     os.remove('./test.db')
 
 
+@pytest.fixture(scope="module")
+def client():
+    with TestClient(app) as c:
+        yield c
+
+
 def assert_correct_output(response: Response, region: str):
     assert response.status_code == 200
 
@@ -51,7 +55,7 @@ def assert_correct_output(response: Response, region: str):
     assert content['region'] == region
 
 
-def test_get_history_week(event_loop):
+def test_get_history_week(event_loop, client):
     body = {
         'region': 'Moscow',
         }
@@ -60,7 +64,7 @@ def test_get_history_week(event_loop):
     assert_correct_output(response, body['region'])
 
 
-def test_get_history_month(event_loop):
+def test_get_history_month(event_loop, client):
     body = {
         'region': 'London',
         }
@@ -69,7 +73,7 @@ def test_get_history_month(event_loop):
     assert_correct_output(response, body['region'])
 
 
-def test_get_history_year(event_loop):
+def test_get_history_year(event_loop, client):
     body = {
         'region': 'Paris',
         }
@@ -78,7 +82,7 @@ def test_get_history_year(event_loop):
     assert_correct_output(response, body['region'])
 
 
-def test_get_history_typo(event_loop):
+def test_get_history_typo(event_loop, client):
     body = {
         'region': 'Paris',
         }
@@ -87,7 +91,7 @@ def test_get_history_typo(event_loop):
     assert response.status_code == 422
 
 
-def test_get_history_incorrect_region(event_loop):
+def test_get_history_incorrect_region(event_loop, client):
     body = {
         'region': 'S2kjSK&%%@@',
         }

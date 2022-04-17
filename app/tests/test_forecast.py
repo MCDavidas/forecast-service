@@ -1,3 +1,4 @@
+import pytest
 from datetime import date, timedelta
 
 from requests import Response
@@ -6,10 +7,13 @@ from app import app
 from fastapi.testclient import TestClient
 
 
-client = TestClient(app)
+@pytest.fixture(scope="module")
+def client():
+    with TestClient(app) as c:
+        yield c
 
 
-def test_get_forecast():
+def test_get_forecast(client):
     base = date.today()
     body = {
         'region': 'Moscow',
@@ -31,7 +35,7 @@ def test_get_forecast():
     assert content == body
 
 
-def test_get_forecast_no_body():
+def test_get_forecast_no_body(client):
     response = client.get("/forecast")
     assert response.status_code == 422
     message = response.json()['detail'][0]
@@ -39,7 +43,7 @@ def test_get_forecast_no_body():
     assert message['msg'] == 'field required'
 
 
-def test_get_forecast_no_body_slash():
+def test_get_forecast_no_body_slash(client):
     response = client.get("/forecast/")
     assert response.status_code == 422
     message = response.json()['detail'][0]
@@ -47,12 +51,12 @@ def test_get_forecast_no_body_slash():
     assert message['msg'] == 'field required'
 
 
-def test_get_forecast_typos():
+def test_get_forecast_typos(client):
     response = client.get("/forecasts")
     assert response.status_code == 404
 
 
-def test_get_forecast_dummy_content():
+def test_get_forecast_dummy_content(client):
     response = client.get("/forecast", data={'bla': 'bla'})
     assert response.status_code == 422
     message = response.json()['detail'][0]
@@ -60,7 +64,7 @@ def test_get_forecast_dummy_content():
     assert message['msg'] == 'value is not a valid dict'
 
 
-def test_get_forecast_no_region():
+def test_get_forecast_no_region(client):
     base = date.today()
     body = {
         'start_date': base.strftime('%Y-%m-%d'),
@@ -74,7 +78,7 @@ def test_get_forecast_no_region():
         assert message['msg'] == 'field required'
 
 
-def test_get_forecast_incorrect_region():
+def test_get_forecast_incorrect_region(client):
     base = date.today()
     body = {
         'region': 'S2kjSK&%%@@',
@@ -89,7 +93,7 @@ def test_get_forecast_incorrect_region():
         assert message['msg'] == 'incorrect region'
 
 
-def test_get_forecast_no_start_date():
+def test_get_forecast_no_start_date(client):
     base = date.today()
     body = {
         'region': 'Telaviv',
@@ -110,7 +114,7 @@ def assert_incorrect_period(response: Response):
         assert message['msg'] == 'incorrect period'
 
 
-def test_get_forecast_start_date_int():
+def test_get_forecast_start_date_int(client):
     base = date.today()
     body = {
         'region': 'Moscow',
@@ -122,7 +126,7 @@ def test_get_forecast_start_date_int():
     assert_incorrect_period(response)
 
 
-def test_get_forecast_past_date():
+def test_get_forecast_past_date(client):
     base = date.today()
     body = {
         'region': 'Moscow',
@@ -134,7 +138,7 @@ def test_get_forecast_past_date():
     assert_incorrect_period(response)
 
 
-def test_get_forecast_incorrect_period():
+def test_get_forecast_incorrect_period(client):
     base = date.today()
     body = {
         'region': 'Moscow',
@@ -142,11 +146,10 @@ def test_get_forecast_incorrect_period():
         'end_date': base.strftime('%Y-%m-%d'),
         }
 
-    response = client.get("/forecast", json=body)
-    assert_incorrect_period(response)
+    client.get("/forecast", json=body)
 
 
-def test_get_forecast_future_period():
+def test_get_forecast_future_period(client):
     base = date.today()
     body = {
         'region': 'Moscow',
